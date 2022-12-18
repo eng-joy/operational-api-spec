@@ -4,15 +4,26 @@ on:
       - main
 
 jobs:
+  image-tag:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.tag.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: tag
+        run: echo "TAG=main-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
   build-image:
     runs-on: ubuntu-22.04
+    needs:
+      - image-tag
     steps:
       - uses: actions/checkout@v3
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: christherama
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -26,4 +37,51 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: Dockerfile
           push: true
-          tags: christherama/django-api-docs:main-latest
+          tags: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}:main-latest
+  build-mock-server:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+    needs:
+      - image-tag
+    steps:
+      - uses: actions/checkout@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: mock/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/mock-api:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository_owner }}/mock-api:main-latest
+  contract-tests:
+    runs-on: ubuntu-22.04
+    needs:
+      - image-tag
+      - build-image
+    services:
+      api:
+        image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+    container:
+      image: postman/newman:5-alpine
+      env:
+        WORKSPACE_ID: eng-joy~0cc2d69d-5ba1-4dc2-9325-f3b552f5444e
+        ENVIRONMENT_ID: 1270062-74b17efa-8042-4b60-90bc-de86fb94666b
+        COLLECTION_ID: 1270062-b9a4c6b5-dd55-49f9-9611-58763863f652
+    steps:
+      - run: |
+          newman run https://api.getpostman.com/collections/${COLLECTION_ID}?apikey=${POSTMAN_API_KEY} \
+            --environment https://api.getpostman.com/environments/${ENVIRONMENT_ID}?apikey=$POSTMAN_API_KEY \
+            --env-var "env-workspaceId=${WORKSPACE_ID}" \
+            --env-var "env-server=api"
