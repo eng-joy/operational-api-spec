@@ -64,26 +64,3 @@ jobs:
           file: mock/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mock-api:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository_owner }}/mock-api:main-latest
-  contract-tests:
-    runs-on: ubuntu-22.04
-    needs:
-      - image-tag
-      - build-image
-    services:
-      api:
-        image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-    container:
-      image: postman/newman:5-alpine
-      env:
-        WORKSPACE_ID: eng-joy~0cc2d69d-5ba1-4dc2-9325-f3b552f5444e
-        ENVIRONMENT_ID: 1270062-74b17efa-8042-4b60-90bc-de86fb94666b
-        COLLECTION_ID: 1270062-b9a4c6b5-dd55-49f9-9611-58763863f652
-    steps:
-      - run: |
-          newman run https://api.getpostman.com/collections/${COLLECTION_ID}?apikey=${{ secrets.POSTMAN_API_KEY }} \
-            --environment https://api.getpostman.com/environments/${ENVIRONMENT_ID}?apikey=${{ secrets.POSTMAN_API_KEY }} \
-            --env-var "env-workspaceId=${WORKSPACE_ID}" \
-            --env-var "env-server=api"

@@ -1,3 +1,6 @@
 from django.db import models
 
-# Create your models here.
+
+class Dinosaur(models.Model):
+    common_name = models.CharField(max_length=255)
+    scientific_name = models.CharField(max_length=255)
