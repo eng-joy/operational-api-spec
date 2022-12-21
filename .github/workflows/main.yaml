@@ -119,7 +119,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: db.sqlite3
-          path: ${{ github.workspace }}/db/db.sqlite3
+          path: db/db.sqlite3
       - name: Update sqlite file permissions
         run: |
           chown $(whoami):$(whoami) ${{ github.workspace }}/db/db.sqlite3
