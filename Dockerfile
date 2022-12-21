@@ -10,3 +10,4 @@ COPY --from=api-docs-builder /usr/app/api/docs/generated-docs.html api/docs/gene
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
+CMD ["uwsgi", "--ini", "uwsgi.ini", "--http", ":8000"]
