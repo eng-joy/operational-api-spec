@@ -106,11 +106,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         volumes:
-          - db:/usr/app/db.sqlite3
+          - /tmp/db.sqlite3:/usr/app/db.sqlite3
+          - /tmp/openapi.yaml:/usr/app/api/docs/openapi.yaml
+    container:
+      image: apiaryio/dredd:14.0.0
+      volumes:
+        - /tmp/openapi.yaml:/api/openapi.yaml
     steps:
-      - name: Migrate database
-        run: python manage.py migrate
-      - name: Create test user
-        run: |
-          echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python manage.py shell
-      - name: Run contract tests
+      - name: Download sqlite database
+        uses: actions/download-artifact@v3
+        with:
+          name: db.sqlite3
+          path: /tmp/db.sqlite3
+      - name: Run tests
+        run: dredd /api/openapi.yaml http://django:8000
