@@ -43,7 +43,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}:main-latest
+          tags: ghcr.io/${{ github.repository }}/django:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}/django:main-latest
   build-mock-server:
     name: Build Mock Server
     runs-on: ubuntu-22.04
@@ -68,7 +68,7 @@ jobs:
           context: .
           file: mock/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/mock-api:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository_owner }}/mock-api:main-latest
+          tags: ghcr.io/${{ github.repository }}/mock-api:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}/mock-api:main-latest
   generate-test-data:
     name: Generate Test Data
     runs-on: ubuntu-22.04
@@ -76,7 +76,7 @@ jobs:
       - image-tag
       - build-image
     container:
-      image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
+      image: ghcr.io/${{ github.repository }}/django:${{ needs.image-tag.outputs.tag }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -101,7 +101,7 @@ jobs:
       - build-image
     services:
       django:
-        image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
+        image: ghcr.io/${{ github.repository }}/django:${{ needs.image-tag.outputs.tag }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
