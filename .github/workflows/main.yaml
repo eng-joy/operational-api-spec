@@ -108,12 +108,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         volumes:
-          - /db:/usr/app
-          - /docs:/usr/app/api/docs
+          - /db/db.sqlite3:/usr/app/db.sqlite3
     container:
       image: apiaryio/dredd:14.0.0
       volumes:
-        - /docs:/api
+        - ${{ github.workspace }}/api/docs:/api
     steps:
       - uses: actions/checkout@v3
       - name: Download sqlite database
