@@ -120,6 +120,9 @@ jobs:
         with:
           name: db.sqlite3
           path: ${{ github.workspace }}/db/db.sqlite3
+      - name: Update sqlite file permissions
+        run: |
+          chown $(whoami):$(whoami) ${{ github.workspace }}/db/db.sqlite3
       - name: Run tests
         run: |
           dredd api/docs/openapi.yaml http://django:8000
