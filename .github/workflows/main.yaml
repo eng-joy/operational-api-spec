@@ -84,7 +84,7 @@ jobs:
         - /tmp/db.sqlite3:/usr/app/db.sqlite3
     steps:
       - name: Migrate database
-        run: python manage.py migrate
+        run: python /usr/app/manage.py migrate
       - name: Create test user
         run: |
           echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python /usr/app/manage.py shell
