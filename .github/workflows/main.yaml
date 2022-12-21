@@ -87,7 +87,7 @@ jobs:
         run: python manage.py migrate
       - name: Create test user
         run: |
-          echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python manage.py shell
+          echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python /usr/app/manage.py shell
       - name: Upload sqlite database
         uses: actions/upload-artifact@v3
         with:
@@ -99,6 +99,7 @@ jobs:
     needs:
       - image-tag
       - build-image
+      - generate-test-data
     services:
       django:
         image: ghcr.io/${{ github.repository }}/django:${{ needs.image-tag.outputs.tag }}
