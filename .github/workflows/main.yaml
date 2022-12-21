@@ -43,6 +43,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: Dockerfile
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ghcr.io/${{ github.repository }}/django:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}/django:main-latest
   build-mock-server:
     name: Build Mock Server
