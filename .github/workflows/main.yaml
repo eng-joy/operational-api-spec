@@ -13,8 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: tag
-        run: echo "TAG=main-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          TAG=main-$(git rev-parse --short HEAD)
+          echo "::notice title=Docker Image Tag::${TAG}"
+          echo "TAG=${TAG}" >> $GITHUB_OUTPUT
   build-image:
+    name: Build and Push Image
     runs-on: ubuntu-22.04
     needs:
       - image-tag
@@ -41,6 +45,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository }}:main-latest
   build-mock-server:
+    name: Build Mock Server
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -64,3 +69,48 @@ jobs:
           file: mock/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mock-api:${{ needs.image-tag.outputs.tag }},ghcr.io/${{ github.repository_owner }}/mock-api:main-latest
+  generate-test-data:
+    name: Generate Test Data
+    runs-on: ubuntu-22.04
+    needs:
+      - image-tag
+      - build-image
+    container:
+      image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      volumes:
+        - /tmp/db.sqlite3:/usr/app/db.sqlite3
+    steps:
+      - name: Migrate database
+        run: python manage.py migrate
+      - name: Create test user
+        run: |
+          echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python manage.py shell
+      - name: Upload sqlite database
+        uses: actions/upload-artifact@v3
+        with:
+          name: db.sqlite3
+          path: /tmp/db.sqlite3
+  run-contract-tests:
+    name: Run Contract Tests
+    runs-on: ubuntu-22.04
+    needs:
+      - image-tag
+      - build-image
+    services:
+      django:
+        image: ghcr.io/${{ github.repository }}:${{ needs.image-tag.outputs.tag }}
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        volumes:
+          - db:/usr/app/db.sqlite3
+    steps:
+      - name: Migrate database
+        run: python manage.py migrate
+      - name: Create test user
+        run: |
+          echo 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user("test", "test@rama.io", "password")' | python manage.py shell
+      - name: Run contract tests
