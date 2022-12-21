@@ -114,7 +114,7 @@ jobs:
     container:
       image: apiaryio/dredd:14.0.0
       volumes:
-        - api/docs:/api
+        - ${{ github.workspace }}/api/docs:/api
     steps:
       - uses: actions/checkout@v3
       - name: Download sqlite database
@@ -123,4 +123,6 @@ jobs:
           name: db.sqlite3
           path: /db/db.sqlite3
       - name: Run tests
-        run: dredd /api/openapi.yaml http://django:8000
+        run: |
+          ls -al api
+          dredd /api/openapi.yaml http://django:8000
