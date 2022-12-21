@@ -81,7 +81,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       volumes:
-        - ${GITHUB_WORKSPACE}:/usr/app
+        - ${{ github.workspace }}:/usr/app
     steps:
       - uses: actions/checkout@v3
       - name: Migrate database
