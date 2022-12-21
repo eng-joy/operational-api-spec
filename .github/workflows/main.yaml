@@ -108,17 +108,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
         volumes:
-          - /tmp/db.sqlite3:/usr/app/db.sqlite3
-          - /tmp/openapi.yaml:/usr/app/api/docs/openapi.yaml
+          - /db:/usr/app
+          - /docs:/usr/app/api/docs
     container:
       image: apiaryio/dredd:14.0.0
       volumes:
-        - /tmp/openapi.yaml:/api/openapi.yaml
+        - /docs:/api
     steps:
+      - uses: actions/checkout@v3
       - name: Download sqlite database
         uses: actions/download-artifact@v3
         with:
           name: db.sqlite3
-          path: /tmp/db.sqlite3
+          path: /db/db.sqlite3
       - name: Run tests
         run: dredd /api/openapi.yaml http://django:8000
